@@ -2,7 +2,7 @@
 
 // ======= DATASET =======
 // Paste your dataset here
-const dataset = [ const dataset = [
+const dataset =
   // ================= GREETINGS =================
   {input: "hi", output: "hello!"},
   {input: "hello", output: "hi there!"},
