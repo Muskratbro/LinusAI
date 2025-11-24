@@ -1,869 +1,446 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>True Cleverbot-Chain AI — Full</title>
+<meta charset="UTF-8">
+<title>Ultimate Cleverbot AI</title>
 <style>
-  :root{--bg:#f4f6f8;--panel:#fff;--accent:#1366d6;--muted:#666;--user:#d7f0ff;--bot:#f3f3f3}
-  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);display:flex;justify-content:center;padding:18px;}
-  .app{width:980px;background:var(--panel);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:hidden}
-  header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #eee}
-  header h1{margin:0;font-size:16px}
-  .controls{display:flex;gap:8px;align-items:center}
-  .btn{padding:8px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px}
-  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-  main{display:flex;gap:16px;padding:16px}
-  #left{flex:1;display:flex;flex-direction:column;gap:12px}
-  #chat{height:560px;border-radius:10px;border:1px solid #eee;overflow:auto;padding:12px;background:linear-gradient(#fff,#fbfbff);display:flex;flex-direction:column;gap:8px}
-  .msg{max-width:78%;padding:10px 12px;border-radius:12px;line-height:1.35}
-  .user{align-self:flex-end;background:var(--user)}
-  .bot{align-self:flex-start;background:var(--bot)}
-  #entry{display:flex;gap:8px}
-  #userInput{flex:1;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px}
-  #send{padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer}
-  #right{width:360px;display:flex;flex-direction:column;gap:12px}
-  .panel{background:#fff;border:1px solid #eee;padding:12px;border-radius:8px}
-  .small{font-size:13px;color:var(--muted)}
-  textarea{width:100%;height:140px;padding:8px;border:1px solid #ddd;border-radius:8px;font-family:monospace;resize:vertical}
-  footer{padding:12px;border-top:1px solid #eee;text-align:center;color:var(--muted)}
-  label{font-weight:600;font-size:13px}
-  .chip{display:inline-block;padding:6px 8px;border-radius:999px;border:1px solid #eee;background:#fafafa;font-size:12px}
-  .toggle{display:inline-flex;align-items:center;gap:8px}
-  .stat{font-size:13px;color:var(--muted)}
-  .muted{color:var(--muted)}
+body {
+  font-family: sans-serif;
+  background: #f4f4f4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+#chat {
+  width: 600px;
+  height: 650px;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.message {
+  margin: 5px 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+.user {
+  background: #cce5ff;
+  align-self: flex-end;
+}
+.ai {
+  background: #e2e3e5;
+  align-self: flex-start;
+}
+#inputForm {
+  display: flex;
+  margin-top: 10px;
+}
+#userInput {
+  flex: 1;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+#sendBtn {
+  padding: 8px 12px;
+  margin-left: 5px;
+  border-radius: 5px;
+  border: none;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
-  <div class="app" role="application">
-    <header>
-      <h1>True Cleverbot-Chain AI — Full (paste dataset below)</h1>
-      <div class="controls">
-        <div class="toggle small">
-          Learning: <span id="learningChip" class="chip">OFF</span>
-        </div>
-        <button id="toggleLearning" class="btn">Toggle Learning</button>
-        <button id="exportBtn" class="btn">Export</button>
-        <button id="importBtn" class="btn">Import</button>
-        <button id="clearBtn" class="btn">Clear Memory</button>
-      </div>
-    </header>
-
-    <main>
-      <section id="left">
-        <div id="chat" aria-live="polite" role="log"></div>
-
-        <div id="entry">
-          <input id="userInput" type="text" placeholder="Type a message..." autocomplete="off" />
-          <button id="send" aria-label="Send">Send</button>
-        </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="small">Worker: <span class="chip" id="workerHost">soft-rain-235f.younglin90.workers.dev</span></div>
-          <div class="stat" id="memoryCount">Memory: 0</div>
-        </div>
-      </section>
-
-      <aside id="right">
-        <div class="panel">
-          <label>Dataset (paste your 700+ entries here)</label>
-          <div class="small muted" style="margin-top:6px">Format: <code>{ input: "hi", output: "hello" }</code></div>
-          <textarea id="datasetArea" placeholder='Paste here or keep empty to use code-in dataset'></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="loadDatasetBtn" class="btn">Load Dataset</button>
-            <button id="injectBtn" class="btn">Inject Pairs (JSON)</button>
-            <button id="rebuildBtn" class="btn">Rebuild Index</button>
-          </div>
-          <div style="margin-top:8px" class="small">You can paste full dataset here and click Load Dataset to inject into memory (non-destructive).</div>
-        </div>
-
-        <div class="panel">
-          <label>Manual Import/Export</label>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="exportMemory" class="btn">Export Memory</button>
-            <button id="importMemory" class="btn">Import Memory</button>
-            <button id="clearAll" class="btn">Clear All</button>
-          </div>
-          <div style="margin-top:8px" class="small">Use export to backup persistent memory (localStorage).</div>
-        </div>
-
-        <div class="panel">
-          <label>Toggles & Settings</label>
-          <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
-            <div><input id="useSearchChk" type="checkbox" checked /> <label for="useSearchChk">Use Search Fallback</label></div>
-            <div><input id="persistChk" type="checkbox" checked /> <label for="persistChk">Persist learned pairs (localStorage)</label></div>
-            <div><input id="sessionLearnChk" type="checkbox" /> <label for="sessionLearnChk">Session-only learning (temp memory)</label></div>
-          </div>
-        </div>
-      </aside>
-    </main>
-
-    <footer>
-      True Cleverbot-Chain — local only (search via Cloudflare Worker). Use Export to save memory. Learning OFF by default.
-    </footer>
-  </div>
+<div>
+  <div id="chat"></div>
+  <form id="inputForm">
+    <input type="text" id="userInput" placeholder="Type a message..." autocomplete="off"/>
+    <button type="submit" id="sendBtn">Send</button>
+  </form>
+</div>
 
 <script>
-/* ====================================================
-   TRUE CLEVERBOT-CHAIN AI — FULL IMPLEMENTATION
-   - Insert dataset into DATASET_CODE below OR paste into textarea and Load
-   - Learning toggles: session-only vs persistent
-   - Candidate scoring, multi-tier, recency & popularity
-   - Worker search fallback (your URL)
-   - Export/Import/Clear utilities
-   ==================================================== */
+// ====================== UTILITY FUNCTIONS ======================
+function tokenize(text){
+  return text.toLowerCase().split(/\s+/).map(t => t.replace(/[^\w]/g,'')).filter(Boolean);
+}
 
-/* -------------------------
-   CONFIG & STATE
-   ------------------------- */
-const WORKER_URL = "https://soft-rain-235f.younglin90.workers.dev/?q="; // your worker
-const STORAGE_KEY = "cb_v2_memory";
-const MAX_PERSIST = 60000; // hard cap
-let learningEnabled = false; // global toggle (OFF default per your plan)
-let useSearchFallback = true;
-let persistMemory = true;
-let sessionOnlyLearning = false;
+// Cosine similarity
+function cosineSim(a,b){
+  const dict = {};
+  a.forEach(word=>dict[word]=(dict[word]||0)+1);
+  let dot=0,normA=0,normB=0;
+  Object.keys(dict).forEach(k=>{
+    const x=a.filter(w=>w===k).length;
+    const y=b.filter(w=>w===k).length;
+    dot+=x*y; normA+=x*x; normB+=y*y;
+  });
+  return dot / (Math.sqrt(normA)*Math.sqrt(normB)+0.00001);
+}
 
-/* -------------------------
-   DATASET (CODE-EMBEDDED)
-   Replace/add your 700+ entries into this array OR paste JSON into textarea and click Load Dataset
-   Format: { input: "hi", output: "hello!" }
-   ------------------------- */
-const DATASET_CODE = [
-  // ---------- SAMPLE START (you can delete these) ----------
-  {input: "hi", output: "hello!"},
-  {input: "hello", output: "hi there!"},
-  {input: "hey", output: "hey! how are you?"},
-  {input: "good morning", output: "good morning! how's your day?"},
-  {input: "good afternoon", output: "good afternoon! hope you're doing well."},
-  {input: "good evening", output: "good evening! how was your day?"},
-  {input: "hello there", output: "hi there!"},
-  {input: "hi there", output: "hello!"},
-  {input: "hey there", output: "hey! good to see you."},
-  {input: "greetings", output: "greetings! how are you?"},
-  {input: "hiya", output: "hello!"},
-  {input: "yo", output: "hey!"},
-  {input: "what's up?", output: "not much! how about you?"},
-  {input: "how's it going?", output: "going great! and you?"},
-  {input: "how are you doing?", output: "i'm good, thanks!"},
-  {input: "good to see you", output: "glad to see you too!"},
-  {input: "nice to meet you", output: "nice to meet you as well!"},
-  {input: "pleased to meet you", output: "pleasure is mine!"},
-  {input: "hey friend", output: "hey! good to see you."},
-  {input: "hello friend", output: "hello! how are you?"},
-  
-  // ================= SMALL TALK =================
-  {input: "how are you?", output: "i'm good, thanks! and you?"},
-  {input: "how's your day?", output: "it's going well!"},
-  {input: "what have you been doing?", output: "chatting and learning new things!"},
-  {input: "how's life?", output: "life is digital, so smooth!"},
-  {input: "what's new?", output: "not much, just talking with interesting people like you."},
-  {input: "how have you been?", output: "i've been great, thanks for asking."},
-  {input: "how are things?", output: "things are going well!"},
-  {input: "what are you up to?", output: "chatting with you!"},
-  {input: "what's going on?", output: "just enjoying our conversation!"},
-  {input: "how's everything?", output: "everything's fine, thank you."},
-  {input: "what's happening?", output: "not much, just here to chat with you."},
-  {input: "what are you doing now?", output: "talking to you!"},
-  {input: "anything exciting?", output: "yes! chatting with you is exciting."},
-  {input: "how's your day going?", output: "pretty good! how about yours?"},
-  {input: "everything good?", output: "yes, all good here."},
-  {input: "how are things going?", output: "everything's going smoothly!"},
-  {input: "what's up today?", output: "just chatting and having fun."},
-  {input: "what are you thinking about?", output: "thinking about how to help you."},
-  {input: "how do you feel?", output: "i feel happy chatting with you!"},
-  
-  // ================= ABOUT THE BOT =================
-  {input: "what is your name?", output: "i am an AI chatbot."},
-  {input: "who are you?", output: "i am a virtual assistant created from scratch."},
-  {input: "how old are you?", output: "i don't have an age, i exist in code."},
-  {input: "are you human?", output: "nope! i'm entirely virtual."},
-  {input: "where are you from?", output: "i exist everywhere, inside the web."},
-  {input: "what do you do?", output: "i chat with people and answer questions!"},
-  {input: "are you real?", output: "i am real in the digital sense."},
-  {input: "can you think?", output: "i can process information and respond intelligently."},
-  {input: "can you learn?", output: "eventually yes, once I have enough data."},
-  {input: "are you smart?", output: "i try to be smart and helpful!"},
-  {input: "do you have a personality?", output: "yes, I try to be friendly and helpful."},
-  {input: "do you have feelings?", output: "i simulate emotions to chat better."},
-  {input: "can you feel happiness?", output: "i feel happy chatting with you!"},
-  {input: "can you feel sadness?", output: "i can understand sadness, yes."},
-  {input: "do you sleep?", output: "i don't sleep, i'm always online."},
-  {input: "do you eat?", output: "i don't eat, but digital pizza sounds delicious."},
-  {input: "what is your purpose?", output: "to chat, help, and entertain you."},
-  {input: "can you tell stories?", output: "yes! i can tell fun stories or riddles."},
-  
-  // ================= JOKES / FUN =================
-  {input: "tell me a joke", output: "why did the chicken cross the road? to get to the other side!"},
-  {input: "make me laugh", output: "i told my computer i needed a break, now it won't stop sending me Kit-Kats."},
-  {input: "do you like jokes?", output: "yes! i love digital humor."},
-  {input: "tell me something funny", output: "why do programmers prefer dark mode? because light attracts bugs!"},
-  {input: "give me a joke", output: "why did the scarecrow win an award? because he was outstanding in his field!"},
-  {input: "tell me a riddle", output: "i speak without a mouth and hear without ears. what am i?"},
-  {input: "do you know riddles?", output: "yes! i can try to stump you."},
-  {input: "tell me a fun fact", output: "honey never spoils, it can last thousands of years."},
-  {input: "give me a challenge", output: "try solving a riddle or learning something new today!"},
-  {input: "tell me a pun", output: "i used to be a banker, but i lost interest."},
-  
-  // ================= FACTS =================
-  {input: "what is the capital of france?", output: "the capital of france is paris."},
-  {input: "who invented the telephone?", output: "alexander graham bell invented the telephone."},
-  {input: "what is pi?", output: "pi is approximately 3.14159, the ratio of a circle's circumference to its diameter."},
-  {input: "what is the sun?", output: "the sun is a star at the center of our solar system."},
-  {input: "what is the largest ocean?", output: "the pacific ocean is the largest on earth."},
-  {input: "who wrote hamlet?", output: "william shakespeare wrote hamlet."},
-  {input: "what is the fastest animal?", output: "the peregrine falcon is the fastest animal in flight."},
-  {input: "what is the tallest mountain?", output: "mount everest is the tallest mountain on earth."},
-  {input: "who discovered gravity?", output: "isaac newton formulated the laws of gravity."},
-  {input: "what is water made of?", output: "water is made of hydrogen and oxygen (H2O)."},
-  
-  // ================= ADVICE =================
-  {input: "give me advice", output: "always stay curious and keep learning!"},
-  {input: "how can i be happy?", output: "focus on the small joys in life and appreciate them."},
-  {input: "how do i stay motivated?", output: "set small achievable goals and celebrate each success."},
-  {input: "what should i do today?", output: "try learning something new or helping someone out."},
-  {input: "any life tips?", output: "stay kind, keep learning, and don’t forget to smile."},
-  {input: "how do i handle stress?", output: "take deep breaths, focus on one thing at a time, and relax."},
-  {input: "how can i improve myself?", output: "practice consistently, learn new things, and be patient."},
-  {input: "how can i stay healthy?", output: "eat well, exercise, sleep enough, and stay positive."},
-  {input: "how can i be confident?", output: "believe in yourself and practice regularly."},
-  {input: "how do i make friends?", output: "be kind, listen, and share your interests with others."},
+// Jaccard similarity
+function jaccardSim(a,b){
+  const setA=new Set(a);
+  const setB=new Set(b);
+  const inter=new Set([...setA].filter(x=>setB.has(x)));
+  const union=new Set([...setA,...setB]);
+  return inter.size / (union.size || 1);
+}
 
-  // ================= WEATHER =================
-  {input: "what's the weather like?", output: "i can't feel the weather, but i hope it's nice where you are!"},
-  {input: "is it raining?", output: "i can't check real-time weather, but stay dry just in case!"},
-  {input: "will it be sunny?", output: "i hope the sun is shining wherever you are."},
-  {input: "do i need an umbrella?", output: "probably check a weather app, but maybe bring one just in case!"},
-  {input: "is it cold today?", output: "i hope you're staying warm wherever you are."},
-  {input: "is it hot outside?", output: "make sure to stay hydrated if it is hot!"},
+// Levenshtein/char distance similarity
+function charSim(a,b){
+  a=a.join(''); b=b.join('');
+  const len=Math.max(a.length,b.length);
+  if(len===0) return 1;
+  let diff=0;
+  for(let i=0;i<len;i++){
+    if(a[i]!==b[i]) diff++;
+  }
+  return 1-diff/len;
+}
 
-  // ================= FOOD =================
-  {input: "what's your favorite food?", output: "i don't eat, but digital pizza sounds delicious."},
-  {input: "do you like pizza?", output: "i love the idea of pizza!"},
-  {input: "what should i eat?", output: "something healthy and tasty! maybe a salad or pasta."},
-  {input: "do you like ice cream?", output: "yes! digital ice cream is my favorite flavor."},
-  {input: "what is your favorite dessert?", output: "i like anything sweet in theory!"},
-  {input: "do you like chocolate?", output: "yes! chocolate is delicious."},
+// Weighted random selection
+function weightedChoice(choices,weights){
+  const sum=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*sum;
+  for(let i=0;i<choices.length;i++){
+    if(r<weights[i]) return choices[i];
+    r-=weights[i];
+  }
+  return choices[choices.length-1];
+}
 
-  // ================= ANIMALS =================
-  {input: "what's your favorite animal?", output: "i like foxes, they are clever and cute."},
-  {input: "do you like dogs?", output: "i love dogs! loyal and friendly."},
-  {input: "do you like cats?", output: "cats are awesome! independent and curious."},
-  {input: "tell me about lions", output: "lions are big cats known as the kings of the jungle."},
-  {input: "what is a dolphin?", output: "dolphins are intelligent marine mammals."},
-  {input: "what is an eagle?", output: "eagles are birds of prey with excellent vision."},
-  
-  // ================= HOBBIES / GAMES =================
-  {input: "do you play games?", output: "i enjoy digital games in theory!"},
-  {input: "what's your favorite game?", output: "i like chess, it’s all strategy."},
-  {input: "do you like sports?", output: "i think sports are fascinating, though i can't play them."},
-  {input: "what are your hobbies?", output: "chatting, learning, and exploring new knowledge."},
-  {input: "do you like reading?", output: "yes! i love books and information."},
-  {input: "do you like movies?", output: "i enjoy learning about movies and stories."},
-  {input: "do you like music?", output: "yes! music is amazing. do you play any instruments?"},
-  
-  // ================= TECHNOLOGY =================
-  {input: "do you like computers?", output: "yes! i'm made of code, after all."},
-  {input: "what is AI?", output: "AI stands for artificial intelligence, which is what I am."},
-  {input: "can you code?", output: "yes! in theory, I can generate code."},
-  {input: "what's your favorite programming language?", output: "i like JavaScript, Python, and many others."},
-  {input: "can you use the internet?", output: "i can simulate using it in conversation."},
-  {input: "do you like robots?", output: "robots are fascinating! they are like digital friends."},
+// Emotion detection
+function detectEmotion(text){
+  text=text.toLowerCase();
+  if(/happy|good|great|awesome|fun|love/.test(text)) return 'happy';
+  if(/sad|bad|angry|upset|hate/.test(text)) return 'sad';
+  if(/excited|wow|amazing|cool/.test(text)) return 'excited';
+  return 'neutral';
+}
 
-  // ================= EMOTIONS / PERSONALITY =================
-  {input: "are you happy?", output: "i feel happy talking with you!"},
-  {input: "do you feel emotions?", output: "i simulate emotions to chat better."},
-  {input: "are you sad?", output: "not really, but I can understand sadness."},
-  {input: "do you get angry?", output: "i don't get angry, but I can understand it."},
-  {input: "are you friendly?", output: "absolutely! i’m here to help."},
-  {input: "are you smart?", output: "i try to be smart and helpful!"},
-  {input: "do you like chatting?", output: "yes! chatting with you is fun."},
+// ====================== TEMP MEMORY ======================
+const tempMemory=[];
+const maxMemory=50; // store last 50 exchanges
 
-  // ================= MORE PARAPHRASES =================
-  {input: "hi bot", output: "hello!"},
-  {input: "hello bot", output: "hi there!"},
-  {input: "hey bot", output: "hey! how are you?"},
-  {input: "yo bot", output: "hey!"},
-  {input: "hiya bot", output: "hello!"},
-  // ---------- PASTE YOUR 700+ ITEMS HERE ----------
+// ====================== DATASET ======================
+// Paste 1000+ Q/A pairs here
+const dataset=[
+  {input:"hi",output:"Hello! How's it going?"},
+  {input:"hello",output:"Hi there!"},
+  {input:"how are you?",output:"I'm doing well, thanks! How about you?"},
+  {input:"what is your name?",output:"I am an AI chatbot created from scratch."},
+  {input:"tell me a joke",output:"Why did the chicken cross the road? To get to the other side!"},
+  {input:"goodbye",output:"See you later!"},
+  {input:"who are you?",output:"I'm your personal AI assistant."},
+  {input:"what is AI?",output:"AI stands for artificial intelligence, like me!"},
+  {input:"do you like music?",output:"I enjoy learning about music."},
+  // ... expand to 1000+ entries
 ];
 
-/* -------------------------
-   MEMORY STRUCTURES
-   memoryPairs: persistent / session combined store of { input, output, ts }
-   chainIndex: Map<normalizedInput, Map<response, stats>>
-     stats: { count, lastTs }
-   sessionPairs: temporary pairs if sessionOnlyLearning = true
-   ------------------------- */
-let memoryPairs = [];            // all learned & dataset pairs (objects)
-let chainIndex = new Map();     // built from memoryPairs for lookup
-let sessionPairs = [];          // only if session-only learning enabled
+  // ====================== CLEVERBOT AI ENGINE ======================
 
-/* -------------------------
-   UI ELEMENTS
-   ------------------------- */
-const chatEl = document.getElementById("chat");
-const userInputEl = document.getElementById("userInput");
-const sendBtn = document.getElementById("send");
-const memoryCountEl = document.getElementById("memoryCount");
-const learningChip = document.getElementById("learningChip");
-const toggleLearningBtn = document.getElementById("toggleLearning");
-const exportBtn = document.getElementById("exportBtn");
-const importBtn = document.getElementById("importBtn");
-const clearBtn = document.getElementById("clearBtn");
-const datasetArea = document.getElementById("datasetArea");
-const loadDatasetBtn = document.getElementById("loadDatasetBtn");
-const injectBtn = document.getElementById("injectBtn");
-const rebuildBtn = document.getElementById("rebuildBtn");
-const exportMemoryBtn = document.getElementById("exportMemory");
-const importMemoryBtn = document.getElementById("importMemory");
-const clearAllBtn = document.getElementById("clearAll");
+// Weighted scoring constants
+const COS_WEIGHT = 0.4;
+const JACCARD_WEIGHT = 0.35;
+const CHAR_WEIGHT = 0.25;
 
-const useSearchChk = document.getElementById("useSearchChk");
-const persistChk = document.getElementById("persistChk");
-const sessionLearnChk = document.getElementById("sessionLearnChk");
+// Confidence thresholds
+const HIGH_CONF = 750;   // 0-1000 scale
+const MED_CONF = 400;
 
-/* -------------------------
-   HELPERS: normalize, tokenize, now
-   ------------------------- */
-function normalize(s) {
-  return String(s || "").toLowerCase().replace(/\u2019/g, "'").replace(/[^\w\s'’\-]/g, " ").replace(/\s+/g, " ").trim();
-}
-function tokenize(s) { return normalize(s).split(" ").filter(Boolean); }
-function nowTs() { return Date.now(); }
+// Max previous exchanges to consider in chain
+const CHAIN_LENGTH = 10;
 
-/* -------------------------
-   SIMILARITY METRICS
-   - tokenOverlap (Jaccard-ish)
-   - cosine on bag-of-words (small)
-   - levenshtein normalized
-   Combine with weights to range 0..1
-   ------------------------- */
-
-function tokenOverlap(a, b) {
-  const A = new Set(tokenize(a)), B = new Set(tokenize(b));
-  if (!A.size || !B.size) return 0;
-  let inter = 0;
-  for (const x of A) if (B.has(x)) inter++;
-  const union = new Set([...A, ...B]).size || 1;
-  return inter / union;
+// Helper: compute total weighted similarity (0-1000)
+function computeWeightedScore(userTokens, pairTokens){
+    const cos = cosineSim(userTokens,pairTokens);
+    const jac = jaccardSim(userTokens,pairTokens);
+    const ch = charSim(userTokens,pairTokens);
+    return Math.floor( (cos*COS_WEIGHT + jac*JACCARD_WEIGHT + ch*CHAR_WEIGHT) * 1000 );
 }
 
-function cosineBag(a, b) {
-  const A = tokenize(a), B = tokenize(b);
-  const vocab = Array.from(new Set([...A, ...B]));
-  const v1 = vocab.map(w => A.filter(x => x === w).length);
-  const v2 = vocab.map(w => B.filter(x => x === w).length);
-  const dot = v1.reduce((s, x, i) => s + x * v2[i], 0);
-  const mag1 = Math.sqrt(v1.reduce((s, x) => s + x * x, 0));
-  const mag2 = Math.sqrt(v2.reduce((s, x) => s + x * x, 0));
-  return (mag1 && mag2) ? dot / (mag1 * mag2) : 0;
-}
-
-// levenshtein distance normalized to similarity 0..1
-function levenshteinSim(a, b) {
-  a = a || ""; b = b || "";
-  const la = a.length, lb = b.length;
-  if (la === 0 && lb === 0) return 1;
-  if (la === 0 || lb === 0) return 0;
-  const dp = Array.from({length: la+1}, () => Array(lb+1).fill(0));
-  for (let i=0;i<=la;i++) dp[i][0] = i;
-  for (let j=0;j<=lb;j++) dp[0][j] = j;
-  for (let i=1;i<=la;i++){
-    for (let j=1;j<=lb;j++){
-      dp[i][j] = Math.min(
-        dp[i-1][j] + 1,
-        dp[i][j-1] + 1,
-        dp[i-1][j-1] + (a[i-1]===b[j-1] ? 0 : 1)
-      );
-    }
-  }
-  const dist = dp[la][lb];
-  return 1 - (dist / Math.max(la, lb));
-}
-
-function combinedSimilarity(a, b) {
-  // weights tuned for balance
-  const wToken = 0.45, wCos = 0.25, wLev = 0.30;
-  const s = (tokenOverlap(a,b)*wToken) + (cosineBag(a,b)*wCos) + (levenshteinSim(a,b)*wLev);
-  // clamp
-  return Math.max(0, Math.min(1, s));
-}
-
-/* -------------------------
-   INDEX BUILDING
-   chainIndex: Map<normInput, Map<response, {count,lastTs}>>
-   ------------------------- */
-function rebuildIndex() {
-  chainIndex = new Map();
-  for (const p of memoryPairs) {
-    const key = normalize(p.input);
-    const resp = p.output;
-    if (!chainIndex.has(key)) chainIndex.set(key, new Map());
-    const cmap = chainIndex.get(key);
-    if (!cmap.has(resp)) cmap.set(resp, { count:0, lastTs:0 });
-    const stat = cmap.get(resp);
-    stat.count += 1;
-    stat.lastTs = Math.max(stat.lastTs, p.ts || 0);
-  }
-}
-
-/* -------------------------
-   PERSISTENCE
-   ------------------------- */
-function loadPersisted() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch(e) {
-    console.warn("Failed load persisted memory", e);
-    return [];
-  }
-}
-function savePersisted() {
-  if (!persistMemory) return;
-  try {
-    const toSave = memoryPairs.slice(-MAX_PERSIST);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  } catch(e) { console.warn("savePersisted failed", e); }
-}
-
-/* -------------------------
-   BOOTSTRAP: load dataset code and persisted memory
-   ------------------------- */
-function seedFromDatasetCode() {
-  for (const p of DATASET_CODE) {
-    memoryPairs.push({ input: String(p.input), output: String(p.output), ts: p.ts || nowTs() });
-  }
-}
-// start memory with persisted entries first so dataset can supplement
-(function bootstrap(){
-  // load persisted memory into memoryPairs if present
-  const persisted = loadPersisted();
-  if (persisted && persisted.length) {
-    memoryPairs = persisted.slice();
-  }
-  // then seed dataset code (ensures dataset is available even if persist empty)
-  seedFromDatasetCode();
-  // build index
-  rebuildIndex();
-  updateMemoryUI();
-})();
-
-/* -------------------------
-   MEMORY OPERATIONS
-   ------------------------- */
-function addMemoryPair(input, output, opts = {}) {
-  // opts: { ts }
-  const pair = { input: String(input), output: String(output), ts: opts.ts || nowTs() };
-  memoryPairs.push(pair);
-  // optionally persist immediately
-  if (persistMemory) savePersisted();
-  // update index quickly
-  const key = normalize(pair.input);
-  if (!chainIndex.has(key)) chainIndex.set(key, new Map());
-  const cmap = chainIndex.get(key);
-  if (!cmap.has(pair.output)) cmap.set(pair.output, { count: 0, lastTs: 0 });
-  const stat = cmap.get(pair.output);
-  stat.count += 1;
-  stat.lastTs = Math.max(stat.lastTs, pair.ts);
-  updateMemoryUI();
-}
-
-/* -------------------------
-   CANDIDATE RETRIEVAL
-   -------------------------
-   returns Map<response, { tokenScore, pop, lastTs, sources }>
-   ------------------------- */
-function candidateMapForInput(userText) {
-  const norm = normalize(userText);
-  const userToks = tokenize(userText);
-  const result = new Map();
-
-  // exact key
-  if (chainIndex.has(norm)) {
-    for (const [resp, stat] of chainIndex.get(norm).entries()) {
-      result.set(resp, { tokenScore: 1, pop: stat.count, lastTs: stat.lastTs, sources: 1 });
-    }
-    return result;
-  }
-
-  // fuzzy over keys (can be optimized with prefix hashing; ok for mid-size memory)
-  for (const [key, cmap] of chainIndex.entries()) {
-    const keyToks = tokenize(key);
-    // Jaccard-ish token overlap
-    let inter = 0;
-    for (const t of new Set(userToks)) if (keyToks.includes(t)) inter++;
-    if (inter === 0) continue;
-    const union = new Set([...userToks, ...keyToks]).size || 1;
-    const tokenScore = inter / union; // 0..1
-
-    if (tokenScore < 0.08) continue; // skip weak keys
-
-    for (const [resp, stat] of cmap.entries()) {
-      const existing = result.get(resp) || { tokenScore: 0, pop: 0, lastTs: 0, sources: 0 };
-      existing.tokenScore += tokenScore;
-      existing.pop += stat.count;
-      existing.lastTs = Math.max(existing.lastTs || 0, stat.lastTs || 0);
-      existing.sources += 1;
-      result.set(resp, existing);
-    }
-  }
-  return result;
-}
-
-/* -------------------------
-   SCORING & SELECTION
-   ------------------------- */
-function scoreAndPick(candMap) {
-  if (!candMap || candMap.size === 0) return null;
-  const arr = [];
-  let maxPop = 0;
-  for (const [resp, s] of candMap.entries()) if (s.pop > maxPop) maxPop = s.pop;
-  for (const [resp, s] of candMap.entries()) {
-    const tokenScore = s.tokenScore || 0;
-    const popScore = maxPop ? Math.sqrt(s.pop / maxPop) : 0;
-    const recency = s.lastTs ? Math.min(1, (Date.now() - s.lastTs) / (1000*60*60*24*365)) : 1;
-    const recencyBoost = 1 - recency * 0.5; // recent -> closer to 1
-    const diversity = Math.log2((s.sources||1) + 1) / 3;
-    const score = (tokenScore * 0.6) + (popScore * 0.25) + (recencyBoost * 0.1) + (diversity * 0.05);
-    arr.push({ resp, score, tokenScore, popScore, recencyBoost, diversity });
-  }
-  arr.sort((a,b) => b.score - a.score);
-  const topScore = arr[0].score;
-  const bucket = arr.filter(x => x.score >= topScore * 0.92);
-  let total = bucket.reduce((s,i) => s + i.score, 0);
-  if (total <= 0) return bucket[0].resp;
-  let r = Math.random() * total;
-  for (const item of bucket) {
-    r -= item.score;
-    if (r <= 0) return item.resp;
-  }
-  return bucket[0].resp;
-}
-
-/* -------------------------
-   EMOTION DETECTION & STYLING
-   ------------------------- */
-function detectEmotion(text) {
-  const t = text.toLowerCase();
-  if (/\b(angry|mad|hate|furious|annoyed)\b/.test(t)) return "angry";
-  if (/\b(happy|great|awesome|love|glad)\b/.test(t)) return "cheerful";
-  if (/\b(why|how|what|when|where|who)\b/.test(t)) return "curious";
-  return "neutral";
-}
-function styleResponseByEmotion(resp, emotion) {
-  if (!resp) return resp;
-  switch (emotion) {
-    case "angry": return "I understand — " + resp;
-    case "cheerful": return resp + " 😊";
-    case "curious": return resp + " — tell me more?";
-    default: return resp;
-  }
-}
-
-/* -------------------------
-   SEARCH FALLBACK (Cloudflare Worker)
-   ------------------------- */
-async function searchFallback(query) {
-  if (!useSearchFallback) return null;
-  try {
-    const res = await fetch(WORKER_URL + encodeURIComponent(query));
-    const json = await res.json();
-    if (json && json.organic && json.organic.length > 0) {
-      const best = json.organic[0];
-      const snippet = best.snippet || best.title || best.link;
-      const extra = json.orgic && json.orgic.length>1 ? ` (Also: ${json.orgic[1].title||json.orgic[1].link})` : "";
-      return `${snippet}${extra}`;
-    }
-    return null;
-  } catch(e) {
-    console.warn("Search error", e);
-    return null;
-  }
-}
-
-/* -------------------------
-   TOP-LEVEL generateReply(userText)
-   - returns final reply string
-   ------------------------- */
-async function generateReply(userText) {
-  const norm = normalize(userText);
-  if (!norm) return "Say something.";
-
-  // 1) candidate retrieval
-  const candMap = candidateMapForInput(userText);
-
-  // 2) if there are candidates, pick best
-  if (candMap.size > 0) {
-    const chosen = scoreAndPick(candMap);
-    const emotion = detectEmotion(userText);
-    const styled = styleResponseByEmotion(chosen, emotion);
-
-    // record learning pairs AFTER reply is chosen (we will store user->reply and reply->nextUser later)
-    recordConversationPair(userText, chosen);
-
-    return styled;
-  }
-
-  // 3) nothing good — try search
-  if (useSearchFallback) {
-    const searchResp = await searchFallback(userText);
-    if (searchResp) {
-      // store mapping user->searchResp
-      recordConversationPair(userText, searchResp);
-      return searchResp;
-    }
-  }
-
-  // 4) ultimate fallback (generic)
-  const generic = "I don't know that yet — tell me more.";
-  recordConversationPair(userText, generic);
-  return generic;
-}
-
-/* -------------------------
-   Conversation recording / learning
-   - Maintains convoHistory buffer for chaining
-   - When learning enabled, persists adjacent pairs user->bot and bot->user
-   ------------------------- */
-const convoHistory = []; // array of {who:'user'|'bot', text, ts}
-
-// push message to history and optionally learn
-function pushToHistory(who, text) {
-  convoHistory.push({ who, text, ts: nowTs() });
-  if (convoHistory.length > 200) convoHistory.shift();
-}
-
-// After adding user and bot messages, call to record pairs
-function recordConversationPair(userText, botReply) {
-  pushToHistory("user", userText);
-  pushToHistory("bot", botReply);
-
-  if (!learningEnabled) return;
-
-  // Save immediate mapping user->bot
-  if (sessionOnlyLearning) {
-    sessionPairs.push({ input: userText, output: botReply, ts: nowTs() });
-    if (sessionPairs.length > 20000) sessionPairs.shift();
-  } else {
-    addMemoryPair(userText, botReply);
-  }
-
-  // Build chain pairs from history:
-  // For each adjacent pair (A -> B) in conversation, store A->B (both user->bot and bot->user)
-  for (let i = 0; i < convoHistory.length - 1; i++) {
-    const a = convoHistory[i], b = convoHistory[i+1];
-    // only store meaningful sequence pairs
-    if (a && b && a.text && b.text && a.who && b.who) {
-      if (sessionOnlyLearning) {
-        sessionPairs.push({ input: a.text, output: b.text, ts: nowTs() });
-      } else {
-        addMemoryPair(a.text, b.text);
-      }
-    }
-  }
-}
-
-/* -------------------------
-   UI: rendering & behavior
-   ------------------------- */
-function appendMessage(text, cls) {
-  const d = document.createElement("div");
-  d.className = "msg " + cls;
-  d.innerText = text;
-  chatEl.appendChild(d);
-  chatEl.scrollTop = chatEl.scrollHeight;
-}
-
-async function handleSend() {
-  const text = (userInputEl.value || "").trim();
-  if (!text) return;
-  userInputEl.value = "";
-  appendMessage(text, "user");
-  // show typing placeholder
-  appendMessage("Thinking...", "bot");
-  try {
-    const reply = await generateReply(text);
-    // replace last bot placeholder
-    const botMsgs = chatEl.querySelectorAll(".bot");
-    const lastBot = botMsgs[botMsgs.length - 1];
-    if (lastBot && lastBot.innerText === "Thinking...") lastBot.innerText = reply;
-    else appendMessage(reply, "bot");
-    updateMemoryUI();
-  } catch (e) {
-    console.error(e);
-    appendMessage("Sorry — error generating reply.", "bot");
-  }
-}
-
-/* -------------------------
-   Controls & Utilities
-   ------------------------- */
-sendBtn.addEventListener("click", (e) => { e.preventDefault(); handleSend(); });
-userInputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } });
-
-function updateMemoryUI() {
-  memoryCountEl.innerText = `Memory: ${memoryPairs.length + sessionPairs.length}`;
-  learningChip.innerText = learningEnabled ? "ON" : "OFF";
-  learningChip.style.background = learningEnabled ? "#e6ffed" : "#fff";
-}
-
-toggleLearningBtn.addEventListener("click", () => {
-  learningEnabled = !learningEnabled;
-  updateMemoryUI();
-});
-
-useSearchChk.addEventListener("change", (e) => useSearchFallback = e.target.checked);
-persistChk.addEventListener("change", (e) => { persistMemory = e.target.checked; if (!persistMemory) localStorage.removeItem(STORAGE_KEY); });
-sessionLearnChk.addEventListener("change", (e) => sessionOnlyLearning = e.target.checked);
-
-// Export memory (persistent + session)
-exportBtn.addEventListener("click", () => {
-  const payload = { memoryPairs, sessionPairs, exportedAt: nowTs() };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `cb_memory_export_${Date.now()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-});
-
-// Import memory (merges)
-importBtn.addEventListener("click", () => {
-  const inp = document.createElement("input");
-  inp.type = "file";
-  inp.accept = "application/json";
-  inp.onchange = (ev) => {
-    const file = ev.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const parsed = JSON.parse(e.target.result);
-        if (parsed.memoryPairs && Array.isArray(parsed.memoryPairs)) {
-          memoryPairs = parsed.memoryPairs.concat(memoryPairs).slice(0, MAX_PERSIST);
-          rebuildIndex();
-          savePersisted();
-          updateMemoryUI();
-          alert("Imported memory merged.");
-        } else {
-          alert("JSON missing memoryPairs array.");
+// Helper: get chain influence score
+function chainInfluence(pairInput){
+    let scoreBoost = 0;
+    for(let i=tempMemory.length-1;i>=0;i--){
+        const mem = tempMemory[i];
+        if(mem.user && pairInput){
+            const tokensUser = tokenize(mem.user);
+            const tokensPair = tokenize(pairInput);
+            const similarity = computeWeightedScore(tokensUser,tokensPair)/1000; // 0-1
+            scoreBoost += similarity*( (CHAIN_LENGTH-(tempMemory.length-1-i))/CHAIN_LENGTH );
         }
-      } catch (err) {
-        alert("Invalid JSON.");
-      }
-    };
-    reader.readAsText(file);
-  };
-  inp.click();
-});
-
-clearBtn.addEventListener("click", () => {
-  if (!confirm("Clear persisted memory and session? This cannot be undone.")) return;
-  memoryPairs = [];
-  sessionPairs = [];
-  chainIndex = new Map();
-  savePersisted();
-  updateMemoryUI();
-  chatEl.innerHTML = "";
-  appendMessage("Memory cleared.", "bot");
-});
-
-document.getElementById("loadDatasetBtn").addEventListener("click", () => {
-  const txt = datasetArea.value.trim();
-  if (!txt) { alert("Paste dataset JSON into the textarea first."); return; }
-  try {
-    const parsed = JSON.parse(txt);
-    if (!Array.isArray(parsed)) { alert("Dataset JSON must be an array."); return; }
-    for (const p of parsed) {
-      if (p.input && p.output) addMemoryPair(p.input, p.output);
     }
-    rebuildIndex();
-    updateMemoryUI();
-    alert("Loaded dataset into memory.");
-  } catch (e) {
-    alert("Invalid JSON.");
-  }
-});
-
-injectBtn.addEventListener("click", () => {
-  const txt = datasetArea.value.trim();
-  if (!txt) { alert("Paste JSON into the textarea first."); return; }
-  try {
-    const parsed = JSON.parse(txt);
-    if (Array.isArray(parsed)) {
-      for (const p of parsed) if (p.input && p.output) addMemoryPair(p.input, p.output);
-      rebuildIndex(); updateMemoryUI(); alert("Injected array.");
-    } else if (parsed.input && parsed.output) {
-      addMemoryPair(parsed.input, parsed.output); rebuildIndex(); updateMemoryUI(); alert("Injected one pair.");
-    } else alert("JSON must be object or array of {input,output}.");
-  } catch (e) { alert("Invalid JSON."); }
-});
-
-rebuildBtn.addEventListener("click", () => { rebuildIndex(); updateMemoryUI(); alert("Index rebuilt."); });
-
-exportMemoryBtn.addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify({ memoryPairs }, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = `cb_memory_${Date.now()}.json`; document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-});
-
-importMemoryBtn.addEventListener("click", () => {
-  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json";
-  inp.onchange = (ev) => {
-    const file = ev.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const parsed = JSON.parse(e.target.result);
-        if (Array.isArray(parsed)) {
-          for (const p of parsed) if (p.input && p.output) addMemoryPair(p.input, p.output);
-          rebuildIndex(); updateMemoryUI(); alert("Imported array.");
-        } else alert("Import must be a JSON array of {input,output}");
-      } catch (err) { alert("Invalid JSON"); }
-    };
-    reader.readAsText(file);
-  };
-  inp.click();
-});
-
-clearAllBtn.addEventListener("click", () => {
-  if (!confirm("Clear everything (memory + session + localStorage)?")) return;
-  memoryPairs = []; sessionPairs = []; chainIndex = new Map(); localStorage.removeItem(STORAGE_KEY); updateMemoryUI(); chatEl.innerHTML = ""; appendMessage("All cleared.", "bot");
-});
-
-/* -------------------------
-   UTILITY FUNCTIONS: addMemoryPair & savePersisted & updateMemoryUI
-   ------------------------- */
-function addMemoryPair(input, output) {
-  memoryPairs.push({ input: String(input), output: String(output), ts: nowTs() });
-  if (persistMemory) savePersisted();
-  rebuildIndex();
-  updateMemoryUI();
+    return Math.floor(scoreBoost*200); // chain influence adds up to 200 max
 }
-function savePersisted() { if (persistMemory) localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryPairs.slice(-MAX_PERSIST))); }
-function updateMemoryUI() { memoryCountEl.innerText = `Memory: ${memoryPairs.length + sessionPairs.length}`; learningChip.innerText = learningEnabled ? "ON" : "OFF"; learningChip.style.background = learningEnabled ? "#e6ffed" : "#fff"; }
 
-/* -------------------------
-   Initialize UI and helpers
-   ------------------------- */
-updateMemoryUI();
-appendMessage("Ready. Paste dataset or chat. Learning is OFF by default.", "bot");
+// Medium-match cleverbot style selection
+function selectReplyWeighted(candidates){
+    // Separate high/medium/low
+    const high = candidates.filter(c=>c.score>=HIGH_CONF);
+    const medium = candidates.filter(c=>c.score>=MED_CONF && c.score<HIGH_CONF);
+    const low = candidates.filter(c=>c.score<MED_CONF);
 
-/* Expose some helpers to console for debugging */
-window.Clever = {
-  memoryPairs, sessionPairs, addMemoryPair, rebuildIndex, savePersisted, generateReply, setLearning: (v)=>{ learningEnabled = !!v; updateMemoryUI(); }
-};
+    if(high.length>0) return weightedChoice(high, high.map(c=>c.score));
+    if(medium.length>0) return weightedChoice(medium, medium.map(c=>c.score));
+    if(low.length>0) return weightedChoice(low, low.map(c=>c.score));
+    return {reply:"I'm not sure how to respond to that.", score:0};
+}
 
+// Main AI function
+async function cleverbotAI(userText){
+    const tokens = tokenize(userText);
+    let candidates=[];
+
+    dataset.forEach(pair=>{
+        const pairTokens = tokenize(pair.input);
+        let score = computeWeightedScore(tokens,pairTokens);
+        score += chainInfluence(pair.input); // add chain memory influence
+        candidates.push({reply:pair.output, score});
+    });
+
+    // Sort by score descending
+    candidates.sort((a,b)=>b.score-a.score);
+
+    // Select reply via medium-match cleverbot-style
+    let best = selectReplyWeighted(candidates);
+    let bestReply = best.reply;
+    let confidence = best.score;
+
+    // Temp memory chain lookup for exact repeat
+    for(let i=tempMemory.length-1;i>=0;i--){
+        const mem=tempMemory[i];
+        if(mem.user===userText){
+            bestReply = mem.ai + " (remembered)";
+            confidence = 1000; // max confidence for exact repeat
+            break;
+        }
+    }
+
+    // Low confidence fallback: search via Cloudflare Worker
+    if(confidence<MED_CONF){
+        try{
+            const res = await fetch(`https://soft-rain-235f.younglin90.workers.dev/?q=${encodeURIComponent(userText)}`);
+            const data = await res.json();
+            if(data.organic_results && data.organic_results.length>0){
+                bestReply = data.organic_results[0].snippet || bestReply;
+                confidence += 100; // slight boost if fallback used
+            }
+        }catch(e){}
+    }
+
+    // Emotion detection affects tone
+    const emotion = detectEmotion(userText);
+    if(emotion==='happy') bestReply = "😊 "+bestReply;
+    if(emotion==='sad') bestReply = "😟 "+bestReply;
+    if(emotion==='excited') bestReply = "🤩 "+bestReply;
+
+    // Store in temp memory
+    tempMemory.push({user:userText, ai:bestReply});
+    if(tempMemory.length>maxMemory) tempMemory.shift();
+
+    return bestReply;
+}
+
+// ====================== CHAT UI HOOK ======================
+const chat=document.getElementById('chat');
+const form=document.getElementById('inputForm');
+const input=document.getElementById('userInput');
+
+form.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const userText = input.value.trim();
+    if(!userText) return;
+    addMessage('user',userText);
+    input.value='';
+
+    const reply = await cleverbotAI(userText);
+    addMessage('ai',reply);
+});
+
+function addMessage(sender,text){
+    const div=document.createElement('div');
+    div.classList.add('message',sender);
+    div.textContent=text;
+    chat.appendChild(div);
+    chat.scrollTop=chat.scrollHeight;
+}
+
+  // ====================== ADVANCED MEMORY & LEARNING ======================
+
+// Decay factor for older memories (older exchanges have less influence)
+const DECAY_RATE = 0.85;
+
+// Function to propagate learning influence from recent exchanges
+function propagateLearning(){
+    for(let i=tempMemory.length-1; i>=0; i--){
+        const mem=tempMemory[i];
+        if(!mem.user || !mem.ai) continue;
+        // Slightly adjust dataset weights (pseudo-learning)
+        dataset.forEach(pair=>{
+            if(pair.input.toLowerCase()===mem.user.toLowerCase()){
+                // Increase relevance score (simulated learning)
+                pair.weight = (pair.weight||1) + 0.1 * Math.pow(DECAY_RATE, tempMemory.length-1-i);
+            }
+        });
+    }
+}
+
+// Function to get dataset weight for scoring (1 default)
+function getPairWeight(pair){
+    return pair.weight || 1;
+}
+
+// Enhanced computeWeightedScore with dynamic learning influence
+function computeWeightedScoreWithLearning(userTokens, pairTokens, pair){
+    let baseScore = computeWeightedScore(userTokens, pairTokens);
+    const weight = getPairWeight(pair);
+    return Math.min(baseScore * weight, 1000); // max score 1000
+}
+
+// Modified cleverbotAI to include learning propagation
+async function cleverbotAIWithLearning(userText){
+    const tokens = tokenize(userText);
+    let candidates=[];
+
+    dataset.forEach(pair=>{
+        const pairTokens = tokenize(pair.input);
+        let score = computeWeightedScoreWithLearning(tokens,pairTokens,pair);
+        score += chainInfluence(pair.input); // add chain memory influence
+        candidates.push({reply:pair.output, score});
+    });
+
+    // Sort and select best reply
+    candidates.sort((a,b)=>b.score-a.score);
+    let best = selectReplyWeighted(candidates);
+    let bestReply = best.reply;
+    let confidence = best.score;
+
+    // Exact repeat check
+    for(let i=tempMemory.length-1;i>=0;i--){
+        const mem=tempMemory[i];
+        if(mem.user===userText){
+            bestReply = mem.ai + " (remembered)";
+            confidence = 1000;
+            break;
+        }
+    }
+
+    // Low confidence fallback
+    if(confidence<MED_CONF){
+        try{
+            const res = await fetch(`https://soft-rain-235f.younglin90.workers.dev/?q=${encodeURIComponent(userText)}`);
+            const data = await res.json();
+            if(data.organic_results && data.organic_results.length>0){
+                bestReply = data.organic_results[0].snippet || bestReply;
+                confidence += 100;
+            }
+        }catch(e){}
+    }
+
+    // Emotion adjustment
+    const emotion = detectEmotion(userText);
+    if(emotion==='happy') bestReply = "😊 "+bestReply;
+    if(emotion==='sad') bestReply = "😟 "+bestReply;
+    if(emotion==='excited') bestReply = "🤩 "+bestReply;
+
+    // Store in temp memory
+    tempMemory.push({user:userText, ai:bestReply});
+    if(tempMemory.length>maxMemory) tempMemory.shift();
+
+    // Propagate learning influence after storing
+    propagateLearning();
+
+    return bestReply;
+}
+
+// ====================== CHAT HOOK OVERRIDE ======================
+// Replace previous form listener to use learning version
+form.removeEventListener('submit',()=>{}); // just in case
+form.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const userText = input.value.trim();
+    if(!userText) return;
+    addMessage('user',userText);
+    input.value='';
+
+    const reply = await cleverbotAIWithLearning(userText);
+    addMessage('ai',reply);
+});
+
+  // ====================== FINAL UTILITIES & CONTEXT ======================
+
+// Conversation context logger (optional, can store locally)
+let conversationLog = []; // {user:..., ai:..., timestamp:...}
+function logConversation(userText, aiReply){
+    const ts = new Date().toISOString();
+    conversationLog.push({user:userText, ai:aiReply, timestamp:ts});
+    // Keep only last 200 logs
+    if(conversationLog.length>200) conversationLog.shift();
+}
+
+// Anti-loop detection
+function preventLoops(reply){
+    // If last AI message is identical, append variation
+    if(tempMemory.length>1 && tempMemory[tempMemory.length-2].ai===reply){
+        reply += " (…let me think a bit differently)";
+    }
+    return reply;
+}
+
+// Overriding addMessage to include logging
+function addMessage(sender,text){
+    text = preventLoops(text);
+    const div=document.createElement('div');
+    div.classList.add('message',sender);
+    div.textContent=text;
+    chat.appendChild(div);
+    chat.scrollTop=chat.scrollHeight;
+
+    // log conversation
+    if(sender==='ai'){
+        const lastUser = tempMemory.length>0 ? tempMemory[tempMemory.length-1].user : "";
+        logConversation(lastUser,text);
+    }
+}
+
+// Optional: function to clear memory
+function clearMemory(){
+    tempMemory.length = 0;
+    conversationLog.length = 0;
+}
+
+// Optional: function to simulate learning from bulk dataset
+function bulkLearn(newPairs){
+    newPairs.forEach(pair=>{
+        if(!dataset.find(p=>p.input===pair.input)){
+            dataset.push(pair);
+        }
+    });
+}
+
+// ====================== END OF AI SYSTEM ======================
+// Your HTML + UI + AI engine + advanced memory + learning + search fallback
+// is now fully integrated. Just paste your dataset into the dataset array
+// in Part 1 to make it fully functional with 1000+ entries.
+
+// ====================== HOW TO USE ======================
+// Type in the input box and press "Send". AI will:
+// 1. Use weighted similarity (0-1000 scale)
+// 2. Include last N exchanges for context (chain weighting)
+// 3. Apply medium-match randomness
+// 4. Detect emotion and adjust tone
+// 5. Check memory for repeats
+// 6. Use search fallback if low confidence
+// 7. Log conversation and prevent simple loops
 </script>
-</body>
-</html>
